@@ -5,7 +5,7 @@ import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
-import { InputTextarea } from 'primereact/inputtextarea'; // Added for Body
+import { InputTextarea } from 'primereact/inputtextarea';
 import { Dropdown } from 'primereact/dropdown';
 import { Calendar } from 'primereact/calendar';
 import { MultiSelect } from 'primereact/multiselect';
@@ -124,6 +124,7 @@ export default function CampaignIndex({ campaigns, templates, lists }: Props) {
   return (
     <>
       <Head title="Campaigns" />
+      <ConfirmDialog />
       <div className="container py-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Campaigns</h1>
@@ -150,7 +151,6 @@ export default function CampaignIndex({ campaigns, templates, lists }: Props) {
           style={{ width: '60vw' }}
         >
           <div className="flex flex-col gap-4 mt-4">
-            {/* Campaign Name */}
             <div>
               <label className="font-semibold mb-1 block">Campaign Name</label>
               <InputText
@@ -161,7 +161,6 @@ export default function CampaignIndex({ campaigns, templates, lists }: Props) {
               />
             </div>
 
-            {/* Template and List Selection */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="font-semibold mb-1 block">Template</label>
@@ -185,7 +184,6 @@ export default function CampaignIndex({ campaigns, templates, lists }: Props) {
               </div>
             </div>
 
-            {/* Subject */}
             <div>
               <label className="font-semibold mb-1 block">Subject</label>
               <InputText
@@ -196,7 +194,6 @@ export default function CampaignIndex({ campaigns, templates, lists }: Props) {
               />
             </div>
 
-            {/* Body */}
             <div>
               <label className="font-semibold mb-1 block">Body</label>
               <InputTextarea
@@ -208,7 +205,6 @@ export default function CampaignIndex({ campaigns, templates, lists }: Props) {
               />
             </div>
 
-            {/* Schedule Fields */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="font-semibold mb-1 block">Start Date</label>
@@ -231,7 +227,6 @@ export default function CampaignIndex({ campaigns, templates, lists }: Props) {
               </div>
             </div>
 
-            {/* Time Range */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="font-semibold mb-1 block">Start Time</label>
@@ -253,7 +248,6 @@ export default function CampaignIndex({ campaigns, templates, lists }: Props) {
               </div>
             </div>
 
-            {/* Submit Button */}
             <Button label="Create Campaign" onClick={handleCreate} className="w-full mt-4" />
           </div>
         </Dialog>
@@ -268,34 +262,94 @@ export default function CampaignIndex({ campaigns, templates, lists }: Props) {
         >
           {editingCampaign && (
             <div className="flex flex-col gap-4 mt-4">
-              <InputText
-                value={editingCampaign.name}
-                onChange={(e) =>
-                  setEditingCampaign({ ...editingCampaign, name: e.target.value })
-                }
-                className="w-full"
-              />
-              <InputText
-                value={editingCampaign.subject}
-                onChange={(e) =>
-                  setEditingCampaign({ ...editingCampaign, subject: e.target.value })
-                }
-                className="w-full"
-              />
-              <InputTextarea
-                value={editingCampaign.body}
-                onChange={(e) =>
-                  setEditingCampaign({ ...editingCampaign, body: e.target.value })
-                }
-                rows={6}
-                className="w-full"
-              />
-              <Button label="Update" onClick={handleUpdate} className="w-full" />
+              <div>
+                <label className="font-semibold mb-1 block">Campaign Name</label>
+                <InputText
+                  value={editingCampaign.name}
+                  onChange={(e) =>
+                    setEditingCampaign({ ...editingCampaign, name: e.target.value })
+                  }
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold mb-1 block">Subject</label>
+                <InputText
+                  value={editingCampaign.subject}
+                  onChange={(e) =>
+                    setEditingCampaign({ ...editingCampaign, subject: e.target.value })
+                  }
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold mb-1 block">Body</label>
+                <InputTextarea
+                  value={editingCampaign.body}
+                  onChange={(e) =>
+                    setEditingCampaign({ ...editingCampaign, body: e.target.value })
+                  }
+                  rows={6}
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold mb-1 block">Start Date</label>
+                <Calendar
+                  value={editingCampaign.start_date}
+                  onChange={(e) =>
+                    setEditingCampaign({ ...editingCampaign, start_date: e.value })
+                  }
+                  placeholder="Pick Start Date"
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold mb-1 block">Active Days</label>
+                <MultiSelect
+                  value={editingCampaign.days_active}
+                  options={days}
+                  onChange={(e) =>
+                    setEditingCampaign({ ...editingCampaign, days_active: e.value })
+                  }
+                  placeholder="Select Days"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="font-semibold mb-1 block">Start Time</label>
+                  <InputText
+                    value={editingCampaign.time_start || ''}
+                    onChange={(e) =>
+                      setEditingCampaign({ ...editingCampaign, time_start: e.target.value })
+                    }
+                    placeholder="Start Time (e.g., 09:00)"
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold mb-1 block">End Time</label>
+                  <InputText
+                    value={editingCampaign.time_end || ''}
+                    onChange={(e) =>
+                      setEditingCampaign({ ...editingCampaign, time_end: e.target.value })
+                    }
+                    placeholder="End Time (e.g., 17:00)"
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              <Button label="Update Campaign" onClick={handleUpdate} className="w-full mt-4" />
             </div>
           )}
         </Dialog>
-
-        <ConfirmDialog />
       </div>
     </>
   );
