@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ContactListSeeder::class,
             ContactSeeder::class,
+            TemplateSeeder::class,
         ]);
     }
 }
