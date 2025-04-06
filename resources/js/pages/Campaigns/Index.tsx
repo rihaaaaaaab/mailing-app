@@ -1,15 +1,11 @@
 import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { DataTable } from 'primereact/datatable';
-import { Column } from 'primereact/column';
-import { Button } from 'primereact/button';
-import { Dialog } from 'primereact/dialog';
-import { InputText } from 'primereact/inputtext';
-import { InputTextarea } from 'primereact/inputtextarea';
-import { Dropdown } from 'primereact/dropdown';
-import { Calendar } from 'primereact/calendar';
-import { MultiSelect } from 'primereact/multiselect';
-import { confirmDialog, ConfirmDialog } from 'primereact/confirmdialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
+import AppLayout from '@/Layouts/app-layout';
 
 interface Campaign {
   id: number;
@@ -66,7 +62,23 @@ export default function CampaignIndex({ campaigns, templates, lists }: Props) {
   ];
 
   const handleCreate = () => {
-    router.post('/campaigns', formData, {
+    // Validate required fields
+    if (!formData.name || !formData.subject || !formData.body) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    router.post('/campaigns', {
+      name: formData.name,
+      subject: formData.subject,
+      body: formData.body,
+      start_date: formData.start_date,
+      time_start: formData.time_start,
+      time_end: formData.time_end,
+      template_id: formData.template_id,
+      list_id: formData.list_id,
+      days_active: formData.days_active,
+    }, {
       onSuccess: () => {
         setIsCreateOpen(false);
         setFormData({
@@ -81,6 +93,9 @@ export default function CampaignIndex({ campaigns, templates, lists }: Props) {
           time_end: null,
         });
       },
+      onError: (errors) => {
+        alert('Failed to create campaign: ' + Object.values(errors).join(', '));
+      }
     });
   };
 
@@ -93,264 +108,218 @@ export default function CampaignIndex({ campaigns, templates, lists }: Props) {
   };
 
   const handleDelete = (id: number) => {
-    confirmDialog({
-      message: 'Are you sure you want to delete this campaign?',
-      header: 'Confirmation',
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => router.delete(`/campaigns/${id}`),
-    });
+    if (confirm('Are you sure you want to delete this campaign?')) {
+      router.delete(`/campaigns/${id}`);
+    }
   };
 
-  const actionBodyTemplate = (rowData: Campaign) => (
-    <div className="flex gap-2">
-      <Button
-        icon="pi pi-pencil"
-        rounded
-        outlined
-        aria-label="Edit"
-        onClick={() => setEditingCampaign(rowData)}
-      />
-      <Button
-        icon="pi pi-trash"
-        rounded
-        outlined
-        severity="danger"
-        aria-label="Delete"
-        onClick={() => handleDelete(rowData.id)}
-      />
-    </div>
-  );
-
   return (
-    <>
+    <AppLayout>
       <Head title="Campaigns" />
-      <ConfirmDialog />
-      <div className="container py-6">
+
+      <div className="p-4 sm:p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Campaigns</h1>
-          <Button
-            icon="pi pi-plus"
-            label="Create Campaign"
-            onClick={() => setIsCreateOpen(true)}
-          />
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Campaign
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Create New Campaign</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium mb-1 block">Campaign Name *</label>
+                  <Input
+                    placeholder="Enter campaign name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Template</label>
+                  <select
+                    className="w-full rounded-md border border-input bg-background px-3 py-2"
+                    value={formData.template_id || ''}
+                    onChange={(e) => setFormData({ ...formData, template_id: e.target.value ? Number(e.target.value) : null })}
+                  >
+                    <option value="">Select a template</option>
+                    {templates.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Contact List</label>
+                  <select
+                    className="w-full rounded-md border border-input bg-background px-3 py-2"
+                    value={formData.list_id || ''}
+                    onChange={(e) => setFormData({ ...formData, list_id: e.target.value ? Number(e.target.value) : null })}
+                  >
+                    <option value="">Select a list</option>
+                    {lists.map((list) => (
+                      <option key={list.id} value={list.id}>
+                        {list.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium mb-1 block">Subject *</label>
+                  <Input
+                    placeholder="Enter email subject"
+                    value={formData.subject}
+                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium mb-1 block">Body *</label>
+                  <textarea
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 min-h-[100px]"
+                    placeholder="Enter email body"
+                    value={formData.body}
+                    onChange={(e) => setFormData({ ...formData, body: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Start Date</label>
+                  <Input
+                    type="date"
+                    value={formData.start_date || ''}
+                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Active Days</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {days.map((day) => (
+                      <label key={day.value} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={formData.days_active.includes(day.value)}
+                          onChange={(e) => {
+                            const newDays = e.target.checked
+                              ? [...formData.days_active, day.value]
+                              : formData.days_active.filter((d) => d !== day.value);
+                            setFormData({ ...formData, days_active: newDays });
+                          }}
+                        />
+                        <span>{day.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Start Time</label>
+                  <Input
+                    type="time"
+                    value={formData.time_start || ''}
+                    onChange={(e) => setFormData({ ...formData, time_start: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 block">End Time</label>
+                  <Input
+                    type="time"
+                    value={formData.time_end || ''}
+                    onChange={(e) => setFormData({ ...formData, time_end: e.target.value })}
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <Button onClick={handleCreate} className="w-full">
+                    Create Campaign
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
-        <DataTable value={campaigns} tableStyle={{ minWidth: '50rem' }}>
-          <Column field="name" header="Name" sortable />
-          <Column field="subject" header="Subject" sortable />
-          <Column field="start_date" header="Start Date" sortable />
-          <Column body={actionBodyTemplate} exportable={false} style={{ minWidth: '12rem' }} />
-        </DataTable>
-
-        {/* Create Campaign Dialog */}
-        <Dialog
-          visible={isCreateOpen}
-          onHide={() => setIsCreateOpen(false)}
-          header="Create New Campaign"
-          modal
-          style={{ width: '60vw' }}
-        >
-          <div className="flex flex-col gap-4 mt-4">
-            <div>
-              <label className="font-semibold mb-1 block">Campaign Name</label>
-              <InputText
-                placeholder="Enter Campaign Name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="font-semibold mb-1 block">Template</label>
-                <Dropdown
-                  value={formData.template_id}
-                  options={templates.map((t) => ({ label: t.name, value: t.id }))}
-                  onChange={(e) => setFormData({ ...formData, template_id: e.value })}
-                  placeholder="Select Template"
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="font-semibold mb-1 block">Contact List</label>
-                <Dropdown
-                  value={formData.list_id}
-                  options={lists.map((l) => ({ label: l.name, value: l.id }))}
-                  onChange={(e) => setFormData({ ...formData, list_id: e.value })}
-                  placeholder="Select List"
-                  className="w-full"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="font-semibold mb-1 block">Subject</label>
-              <InputText
-                placeholder="Enter Email Subject"
-                value={formData.subject}
-                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <label className="font-semibold mb-1 block">Body</label>
-              <InputTextarea
-                placeholder="Write your email body here..."
-                value={formData.body}
-                onChange={(e) => setFormData({ ...formData, body: e.target.value })}
-                rows={6}
-                className="w-full"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="font-semibold mb-1 block">Start Date</label>
-                <Calendar
-                  value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.value })}
-                  placeholder="Pick Start Date"
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="font-semibold mb-1 block">Active Days</label>
-                <MultiSelect
-                  value={formData.days_active}
-                  options={days}
-                  onChange={(e) => setFormData({ ...formData, days_active: e.value })}
-                  placeholder="Select Days"
-                  className="w-full"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="font-semibold mb-1 block">Start Time</label>
-                <InputText
-                  placeholder="Start Time (e.g., 09:00)"
-                  value={formData.time_start}
-                  onChange={(e) => setFormData({ ...formData, time_start: e.target.value })}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="font-semibold mb-1 block">End Time</label>
-                <InputText
-                  placeholder="End Time (e.g., 17:00)"
-                  value={formData.time_end}
-                  onChange={(e) => setFormData({ ...formData, time_end: e.target.value })}
-                  className="w-full"
-                />
-              </div>
-            </div>
-
-            <Button label="Create Campaign" onClick={handleCreate} className="w-full mt-4" />
-          </div>
-        </Dialog>
-
-        {/* Edit Campaign Dialog */}
-        <Dialog
-          visible={!!editingCampaign}
-          onHide={() => setEditingCampaign(null)}
-          header="Edit Campaign"
-          modal
-          style={{ width: '50vw' }}
-        >
-          {editingCampaign && (
-            <div className="flex flex-col gap-4 mt-4">
-              <div>
-                <label className="font-semibold mb-1 block">Campaign Name</label>
-                <InputText
-                  value={editingCampaign.name}
-                  onChange={(e) =>
-                    setEditingCampaign({ ...editingCampaign, name: e.target.value })
-                  }
-                  className="w-full"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold mb-1 block">Subject</label>
-                <InputText
-                  value={editingCampaign.subject}
-                  onChange={(e) =>
-                    setEditingCampaign({ ...editingCampaign, subject: e.target.value })
-                  }
-                  className="w-full"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold mb-1 block">Body</label>
-                <InputTextarea
-                  value={editingCampaign.body}
-                  onChange={(e) =>
-                    setEditingCampaign({ ...editingCampaign, body: e.target.value })
-                  }
-                  rows={6}
-                  className="w-full"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold mb-1 block">Start Date</label>
-                <Calendar
-                  value={editingCampaign.start_date}
-                  onChange={(e) =>
-                    setEditingCampaign({ ...editingCampaign, start_date: e.value })
-                  }
-                  placeholder="Pick Start Date"
-                  className="w-full"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold mb-1 block">Active Days</label>
-                <MultiSelect
-                  value={editingCampaign.days_active}
-                  options={days}
-                  onChange={(e) =>
-                    setEditingCampaign({ ...editingCampaign, days_active: e.value })
-                  }
-                  placeholder="Select Days"
-                  className="w-full"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="font-semibold mb-1 block">Start Time</label>
-                  <InputText
-                    value={editingCampaign.time_start || ''}
-                    onChange={(e) =>
-                      setEditingCampaign({ ...editingCampaign, time_start: e.target.value })
-                    }
-                    placeholder="Start Time (e.g., 09:00)"
-                    className="w-full"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold mb-1 block">End Time</label>
-                  <InputText
-                    value={editingCampaign.time_end || ''}
-                    onChange={(e) =>
-                      setEditingCampaign({ ...editingCampaign, time_end: e.target.value })
-                    }
-                    placeholder="End Time (e.g., 17:00)"
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              <Button label="Update Campaign" onClick={handleUpdate} className="w-full mt-4" />
-            </div>
-          )}
-        </Dialog>
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {campaigns.map((campaign) => (
+            <Card key={campaign.id} className="w-full">
+              <CardContent className="pt-6">
+                {editingCampaign?.id === campaign.id ? (
+                  <div className="space-y-4">
+                    <Input
+                      value={editingCampaign.name}
+                      onChange={(e) =>
+                        setEditingCampaign({ ...editingCampaign, name: e.target.value })
+                      }
+                      placeholder="Campaign Name"
+                    />
+                    <Input
+                      value={editingCampaign.subject}
+                      onChange={(e) =>
+                        setEditingCampaign({ ...editingCampaign, subject: e.target.value })
+                      }
+                      placeholder="Subject"
+                    />
+                    <Input
+                      value={editingCampaign.body}
+                      onChange={(e) =>
+                        setEditingCampaign({ ...editingCampaign, body: e.target.value })
+                      }
+                      placeholder="Body"
+                    />
+                    <div className="flex gap-2">
+                      <Button onClick={handleUpdate} className="flex-1">
+                        Save
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setEditingCampaign(null)}
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-2 mb-4">
+                      <p className="font-medium">{campaign.name}</p>
+                      <p className="text-sm text-gray-500">{campaign.subject}</p>
+                      <p className="text-sm text-gray-500">{campaign.start_date}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setEditingCampaign(campaign)}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleDelete(campaign.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
-    </>
+    </AppLayout>
   );
 }

@@ -10,15 +10,26 @@ class Contact extends Model
     use HasFactory;
 
     protected $fillable = [
+        'list_id',
+        'email',
         'first_name',
         'last_name',
-        'email',
         'phone',
-        'list_id'
+        'address',
+        'city',
+        'state',
+        'zip',
+        'country',
+        'notes',
     ];
 
-    public function contactList()
+    public function list()
     {
         return $this->belongsTo(ContactList::class, 'list_id');
+    }
+
+    public function campaigns()
+    {
+        return $this->belongsToMany(Campaign::class, 'contact_campaigns', 'contact_id', 'campaign_id');
     }
 }

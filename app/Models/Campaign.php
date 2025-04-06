@@ -25,4 +25,9 @@ class Campaign extends Model
     {
         return $this->belongsTo(ContactList::class, 'list_id');
     }
+
+    public function contacts()
+    {
+        return $this->belongsToMany(Contact::class, 'contact_campaigns', 'campaign_id', 'contact_id');
+    }
 }

@@ -54,6 +54,23 @@ class ContactController extends Controller
         return redirect()->back();
     }
 
+    public function import(Request $request, ContactList $list)
+    {
+        $request->validate([
+            'contacts' => 'required|array',
+            'contacts.*.first_name' => 'required|string|max:255',
+            'contacts.*.last_name' => 'required|string|max:255',
+            'contacts.*.email' => 'required|email|max:255',
+            'contacts.*.phone' => 'required|string|max:255'
+        ]);
+
+        foreach ($request->contacts as $contactData) {
+            $list->contacts()->create($contactData);
+        }
+
+        return redirect()->back();
+    }
+
     public function export(ContactList $list, string $format)
     {
         $contacts = $list->contacts()->get();

@@ -8,18 +8,18 @@ use App\Http\Controllers\CampaignController;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
-})->name('home');
+})->name('dashboard');
 
 Route::middleware([
     'auth',
     ValidateSessionWithWorkOS::class,
 ])->group(function () {
-    Route::get('dashboard', function () {
+    Route::get('lists', function () {
         $lists = \App\Models\ContactList::withCount('contacts')->get();
-        return Inertia::render('dashboard', [
+        return Inertia::render('lists', [
             'lists' => $lists
         ]);
-    })->name('dashboard');
+    })->name('lists');
 
     Route::post('/lists', [\App\Http\Controllers\ContactListController::class, 'store']);
     Route::put('/lists/{list}', [\App\Http\Controllers\ContactListController::class, 'update']);
@@ -27,6 +27,8 @@ Route::middleware([
     Route::get('/lists/{list}', [\App\Http\Controllers\ContactListController::class, 'show'])->name('lists.show');
     Route::get('/lists/{list}/contacts', [\App\Http\Controllers\ContactListController::class, 'show'])->name('lists.contacts');
     Route::post('/lists/{list}/contacts', [\App\Http\Controllers\ContactController::class, 'store'])->name('contacts.store');
+    Route::put('/contacts/{contact}', [\App\Http\Controllers\ContactController::class, 'update'])->name('contacts.update');
+    Route::post('/lists/{list}/contacts/import', [\App\Http\Controllers\ContactController::class, 'import'])->name('contacts.import');
     Route::resource('campaigns', CampaignController::class)->except(['show']);
 });
 
