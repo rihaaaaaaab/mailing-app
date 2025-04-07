@@ -18,6 +18,12 @@ const mainNavItems: NavItem[] = [
         href: '/campaigns',
         icon: Mail,
     },
+    {
+        title: 'Templates',
+        href: '/templates',
+        icon: LayoutGrid,
+    },
+
 ];
 
 const footerNavItems: NavItem[] = [

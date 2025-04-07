@@ -12,4 +12,11 @@ class Template extends Model
         'name',
         'content',
     ];
+
+    protected $appends = ['preview'];
+
+    public function getPreviewAttribute()
+    {
+        return substr(strip_tags($this->content), 0, 100) . '...';
+    }
 }

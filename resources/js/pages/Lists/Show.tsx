@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, FileDown, FileUp, Pencil, Trash2, Mail, Phone } from 'lucide-react';
+import { Plus, FileDown, FileUp, Pencil, Trash2, Mail, Phone, ArrowLeft } from 'lucide-react';
 import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import { Contact } from '@/types';
@@ -163,6 +163,10 @@ export default function Show({ list }: Props) {
                         <Button variant="outline" onClick={handleImport}>
                             <FileUp className="w-4 h-4 mr-2" />
                             Import CSV
+                        </Button>
+                        <Button variant="outline" onClick={() => router.get('/lists')}>
+                            <ArrowLeft className="w-4 h-4 mr-2" />
+                            Back to Lists
                         </Button>
                     </div>
                 </div>

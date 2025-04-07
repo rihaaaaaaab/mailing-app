@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\WorkOS\Http\Middleware\ValidateSessionWithWorkOS;
 use App\Http\Controllers\CampaignController;
+use App\Http\Controllers\TemplateController;  // Add this line
 
 
 Route::get('/', function () {
@@ -30,8 +31,15 @@ Route::middleware([
     Route::put('/contacts/{contact}', [\App\Http\Controllers\ContactController::class, 'update'])->name('contacts.update');
     Route::delete('/contacts/{contact}', [\App\Http\Controllers\ContactController::class, 'destroy'])->name('contacts.destroy');
     Route::post('/lists/{list}/contacts/import', [\App\Http\Controllers\ContactController::class, 'import'])->name('contacts.import');
+    // Add these template routes
+    Route::get('/templates', [TemplateController::class, 'index'])->name('templates.index');
+    Route::post('/templates', [TemplateController::class, 'store'])->name('templates.store');
+    Route::put('/templates/{template}', [TemplateController::class, 'update'])->name('templates.update');
+    Route::delete('/templates/{template}', [TemplateController::class, 'destroy'])->name('templates.destroy');
+
     Route::resource('campaigns', CampaignController::class)->except(['show']);
 });
+
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

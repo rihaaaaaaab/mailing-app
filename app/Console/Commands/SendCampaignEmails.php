@@ -113,16 +113,18 @@ class SendCampaignEmails extends Command
         foreach ($contacts as $contact) {
             try {
                 $this->info("Sending to: {$contact->email}");
-                
-                Mail::send([], [], function ($message) use ($campaign, $contact) {
-                    $templateContent = $campaign->template_id 
-                        ? \App\Models\Template::find($campaign->template_id)->content 
-                        : $campaign->body;
 
+                // Fetch the template content if a template is selected
+                $templateContent = $campaign->template_id 
+                    ? \App\Models\Template::find($campaign->template_id)->content 
+                    : $campaign->body;
+                
+                // Send the email
+                Mail::send([], [], function ($message) use ($campaign, $contact, $templateContent) {
                     $message->from(config('mail.from.address'))
                         ->to($contact->email)
                         ->subject($campaign->subject)
-                        ->html($templateContent); // Use the html() method to set the body
+                        ->html($templateContent); // Use the template content as the email body
                 });
 
                 $campaign->contacts()->attach($contact->id);

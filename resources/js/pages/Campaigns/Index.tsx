@@ -254,69 +254,177 @@ export default function CampaignIndex({ campaigns, templates, lists }: Props) {
           {campaigns.map((campaign) => (
             <Card key={campaign.id} className="w-full">
               <CardContent className="pt-6">
-                {editingCampaign?.id === campaign.id ? (
-                  <div className="space-y-4">
-                    <Input
-                      value={editingCampaign.name}
-                      onChange={(e) =>
-                        setEditingCampaign({ ...editingCampaign, name: e.target.value })
-                      }
-                      placeholder="Campaign Name"
+                <Dialog open={editingCampaign?.id === campaign.id} onOpenChange={(isOpen) => setEditingCampaign(isOpen ? campaign : null)}>
+                  <DialogTrigger asChild>
+                    <div className="space-y-3 mb-4 cursor-pointer">
+                      <h3 className="font-semibold text-lg">{campaign.name}</h3>
+                      <div className="space-y-2 text-sm text-gray-600">
+                        <p><span className="font-medium">Subject:</span> {campaign.subject}</p>
+                        <p><span className="font-medium">Start Date:</span> {campaign.start_date || 'Not set'}</p>
+                        <div className="flex gap-2">
+                          <span className="font-medium">Time:</span>
+                          <span>{campaign.time_start || '--:--'} - {campaign.time_end || '--:--'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium">Active Days:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {campaign.days_active.map((day) => (
+                              <span key={day} className="bg-gray-100 px-2 py-0.5 rounded-full text-xs">
+                                {day}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        {campaign.template_id && (
+                          <p>
+                            <span className="font-medium">Template:</span>{' '}
+                            {templates.find(t => t.id === campaign.template_id)?.name}
+                          </p>
+                        )}
+                        {campaign.list_id && (
+                          <p>
+                            <span className="font-medium">List:</span>{' '}
+                            {lists.find(l => l.id === campaign.list_id)?.name}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </DialogTrigger>
+                  <DialogContent className="max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Edit Campaign</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <Input
+                value={editingCampaign?.name || ''}
+                onChange={(e) =>
+                  setEditingCampaign({ ...editingCampaign!, name: e.target.value })
+                }
+                placeholder="Campaign Name"
                     />
                     <Input
-                      value={editingCampaign.subject}
-                      onChange={(e) =>
-                        setEditingCampaign({ ...editingCampaign, subject: e.target.value })
-                      }
-                      placeholder="Subject"
+                value={editingCampaign?.subject || ''}
+                onChange={(e) =>
+                  setEditingCampaign({ ...editingCampaign!, subject: e.target.value })
+                }
+                placeholder="Subject"
+                    />
+                    <textarea
+                className="w-full rounded-md border border-input bg-background px-3 py-2 min-h-[100px]"
+                value={editingCampaign?.body || ''}
+                onChange={(e) =>
+                  setEditingCampaign({ ...editingCampaign!, body: e.target.value })
+                }
+                placeholder="Body"
                     />
                     <Input
-                      value={editingCampaign.body}
-                      onChange={(e) =>
-                        setEditingCampaign({ ...editingCampaign, body: e.target.value })
-                      }
-                      placeholder="Body"
+                type="date"
+                value={editingCampaign?.start_date || ''}
+                onChange={(e) =>
+                  setEditingCampaign({ ...editingCampaign!, start_date: e.target.value })
+                }
+                placeholder="Start Date"
                     />
+                    <div className="grid grid-cols-2 gap-2">
+                {days.map((day) => (
+                  <label key={day.value} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={editingCampaign?.days_active.includes(day.value) || false}
+                      onChange={(e) => {
+                    const newDays = e.target.checked
+                      ? [...editingCampaign!.days_active, day.value]
+                      : editingCampaign!.days_active.filter((d) => d !== day.value);
+                    setEditingCampaign({ ...editingCampaign!, days_active: newDays });
+                        }}
+                      />
+                      <span>{day.label}</span>
+                    </label>
+                  ))}
+                      </div>
+                      <Input
+                type="time"
+                value={editingCampaign?.time_start || ''}
+                onChange={(e) =>
+                  setEditingCampaign({ ...editingCampaign!, time_start: e.target.value })
+                }
+                placeholder="Start Time"
+                    />
+                    <Input
+                type="time"
+                value={editingCampaign?.time_end || ''}
+                onChange={(e) =>
+                  setEditingCampaign({ ...editingCampaign!, time_end: e.target.value })
+                }
+                placeholder="End Time"
+                    />
+                    <select
+                className="w-full rounded-md border border-input bg-background px-3 py-2"
+                value={editingCampaign?.template_id || ''}
+                onChange={(e) =>
+                  setEditingCampaign({
+                    ...editingCampaign!,
+                    template_id: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
+                    >
+                <option value="">Select a template</option>
+                {templates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name}
+                  </option>
+                ))}
+                    </select>
+                    <select
+                className="w-full rounded-md border border-input bg-background px-3 py-2"
+                value={editingCampaign?.list_id || ''}
+                onChange={(e) =>
+                  setEditingCampaign({
+                    ...editingCampaign!,
+                    list_id: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
+                    >
+                <option value="">Select a list</option>
+                {lists.map((list) => (
+                  <option key={list.id} value={list.id}>
+                    {list.name}
+                  </option>
+                ))}
+                    </select>
                     <div className="flex gap-2">
-                      <Button onClick={handleUpdate} className="flex-1">
-                        Save
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => setEditingCampaign(null)}
-                        className="flex-1"
-                      >
-                        Cancel
-                      </Button>
+                <Button onClick={handleUpdate} className="flex-1">
+                  Save
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setEditingCampaign(null)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
                     </div>
                   </div>
-                ) : (
-                  <>
-                    <div className="space-y-2 mb-4">
-                      <p className="font-medium">{campaign.name}</p>
-                      <p className="text-sm text-gray-500">{campaign.subject}</p>
-                      <p className="text-sm text-gray-500">{campaign.start_date}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setEditingCampaign(campaign)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleDelete(campaign.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+                </DialogContent>
+              </Dialog>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setEditingCampaign(campaign)}
+                >
+                  <Pencil className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleDelete(campaign.id)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
           ))}
         </div>
       </div>
