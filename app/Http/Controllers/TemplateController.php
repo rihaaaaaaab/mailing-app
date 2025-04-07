@@ -6,6 +6,7 @@ use App\Models\Template;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Purifier;
 
 class TemplateController extends Controller
 {
@@ -24,6 +25,8 @@ class TemplateController extends Controller
             'content' => 'nullable|string',
         ]);
 
+        $data['content'] = Purifier::clean($data['content']); // Sanitize HTML
+
         Template::create($data);
 
         return redirect()->back()->with('success', 'Template created successfully!');
@@ -35,6 +38,8 @@ class TemplateController extends Controller
             'name' => 'required|string|max:255',
             'content' => 'nullable|string',
         ]);
+
+        $data['content'] = Purifier::clean($data['content']); // Sanitize HTML
 
         $template->update($data);
 

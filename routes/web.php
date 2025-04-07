@@ -36,7 +36,6 @@ Route::middleware([
     Route::post('/templates', [TemplateController::class, 'store'])->name('templates.store');
     Route::put('/templates/{template}', [TemplateController::class, 'update'])->name('templates.update');
     Route::delete('/templates/{template}', [TemplateController::class, 'destroy'])->name('templates.destroy');
-
     Route::resource('campaigns', CampaignController::class)->except(['show']);
 });
 

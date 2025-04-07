@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye } from 'lucide-react'; // 👈 Added Eye icon
 import AppLayout from '@/Layouts/app-layout';
 
 interface Template {
@@ -21,6 +21,7 @@ interface Props {
 export default function TemplateIndex({ templates }: Props) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+  const [previewingTemplate, setPreviewingTemplate] = useState<Template | null>(null); // 👈 New state for preview
   const [formData, setFormData] = useState({
     name: '',
     content: '',
@@ -62,6 +63,7 @@ export default function TemplateIndex({ templates }: Props) {
       <Head title="Templates" />
 
       <div className="p-4 sm:p-6">
+        {/* Create Button + Modal */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Templates</h1>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
@@ -101,10 +103,12 @@ export default function TemplateIndex({ templates }: Props) {
           </Dialog>
         </div>
 
+        {/* Template Cards */}
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {templates.map((template) => (
             <Card key={template.id} className="w-full">
               <CardContent className="pt-6">
+                {/* Edit Modal */}
                 <Dialog
                   open={editingTemplate?.id === template.id}
                   onOpenChange={(isOpen) => setEditingTemplate(isOpen ? template : null)}
@@ -150,6 +154,8 @@ export default function TemplateIndex({ templates }: Props) {
                     </div>
                   </DialogContent>
                 </Dialog>
+
+                {/* Action Buttons */}
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -157,6 +163,13 @@ export default function TemplateIndex({ templates }: Props) {
                     onClick={() => setEditingTemplate(template)}
                   >
                     <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setPreviewingTemplate(template)} // 👈 Preview button
+                  >
+                    <Eye className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="outline"
@@ -170,6 +183,27 @@ export default function TemplateIndex({ templates }: Props) {
             </Card>
           ))}
         </div>
+
+        {/* Preview Modal */}
+        <Dialog open={!!previewingTemplate} onOpenChange={(isOpen) => !isOpen && setPreviewingTemplate(null)}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Preview Template</DialogTitle>
+            </DialogHeader>
+            {previewingTemplate && (
+              <div className="space-y-4">
+                <h2 className="text-xl font-bold">{previewingTemplate.name}</h2>
+                <div className="prose max-w-none">
+                  <div
+                    className="text-sm text-gray-600 border rounded-md p-2 bg-gray-50"
+                    dangerouslySetInnerHTML={{ __html: previewingTemplate.content }}
+                  />
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
       </div>
     </AppLayout>
   );
