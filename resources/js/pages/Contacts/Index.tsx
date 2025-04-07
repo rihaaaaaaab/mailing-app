@@ -58,7 +58,11 @@ export default function Index({ list, contacts }: Props) {
 
   const handleDelete = (id: number) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce contact ?')) {
-      router.delete(`/contacts/${id}`);
+      router.delete(`/contacts/${id}`, {
+        onSuccess: () => {
+          alert('Contact supprimé avec succès');
+        }
+      });
     }
   };
 
@@ -196,6 +200,11 @@ export default function Index({ list, contacts }: Props) {
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
+                      <form action="{{ route('contacts.destroy', $contact->id) }}" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit">Delete</button>
+                      </form>
                     </div>
                   </>
                 )}

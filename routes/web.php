@@ -28,6 +28,7 @@ Route::middleware([
     Route::get('/lists/{list}/contacts', [\App\Http\Controllers\ContactListController::class, 'show'])->name('lists.contacts');
     Route::post('/lists/{list}/contacts', [\App\Http\Controllers\ContactController::class, 'store'])->name('contacts.store');
     Route::put('/contacts/{contact}', [\App\Http\Controllers\ContactController::class, 'update'])->name('contacts.update');
+    Route::delete('/contacts/{contact}', [\App\Http\Controllers\ContactController::class, 'destroy'])->name('contacts.destroy');
     Route::post('/lists/{list}/contacts/import', [\App\Http\Controllers\ContactController::class, 'import'])->name('contacts.import');
     Route::resource('campaigns', CampaignController::class)->except(['show']);
 });

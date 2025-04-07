@@ -34,7 +34,7 @@ class SendCampaignEmails extends Command
     public function handle()
     {
         $now = Carbon::now();
-        $currentDay = $now->format('l'); // e.g., 'Monday' (with uppercase)
+        $currentDay = $now->format('l'); 
         $currentTime = $now->format('H:i:s');
         $currentDate = $now->format('Y-m-d');
 
@@ -114,12 +114,16 @@ class SendCampaignEmails extends Command
             try {
                 $this->info("Sending to: {$contact->email}");
                 
-                Resend::emails()->send([
-                    'from' => config('mail.from.address'),
-                    'to' => $contact->email,
-                    'subject' => $campaign->subject,
-                    'html' => $campaign->body
-                ]);
+                Mail::send([], [], function ($message) use ($campaign, $contact) {
+                    $templateContent = $campaign->template_id 
+                        ? \App\Models\Template::find($campaign->template_id)->content 
+                        : $campaign->body;
+
+                    $message->from(config('mail.from.address'))
+                        ->to($contact->email)
+                        ->subject($campaign->subject)
+                        ->html($templateContent); // Use the html() method to set the body
+                });
 
                 $campaign->contacts()->attach($contact->id);
                 $log->increment('successful_sends');
