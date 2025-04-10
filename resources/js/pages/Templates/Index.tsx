@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Eye } from 'lucide-react'; // 👈 Added Eye icon
+import { Plus, Pencil, Trash2, Eye } from 'lucide-react';
 import AppLayout from '@/Layouts/app-layout';
+import EmailEditor from 'react-email-editor';
+import axios from 'axios';
 
 interface Template {
   id: number;
@@ -21,33 +23,66 @@ interface Props {
 export default function TemplateIndex({ templates }: Props) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
-  const [previewingTemplate, setPreviewingTemplate] = useState<Template | null>(null); // 👈 New state for preview
-  const [formData, setFormData] = useState({
-    name: '',
-    content: '',
-  });
+  const [previewingTemplate, setPreviewingTemplate] = useState<Template | null>(null);
+  const emailEditorRef = useRef<any>(null);
 
-  const handleCreate = () => {
-    if (!formData.name || !formData.content) {
-      alert('Please fill in all required fields');
+  const [templateName, setTemplateName] = useState('');
+
+  const handleSaveTemplate = () => {
+    if (!emailEditorRef.current) {
+      console.error('EmailEditor ref is not initialized.');
       return;
     }
 
-    router.post('/templates', formData, {
-      onSuccess: () => {
-        setIsCreateOpen(false);
-        setFormData({ name: '', content: '' });
-      },
-      onError: (errors) => {
-        alert('Failed to create template: ' + Object.values(errors).join(', '));
-      },
+    // Ensure the editor is loaded
+    emailEditorRef.current.editor.exportHtml((data) => {
+      const { design, html } = data;
+
+      if (!templateName.trim()) {
+        alert('Please enter a template name');
+        return;
+      }
+
+      axios
+        .post('/templates', {
+          name: templateName,
+          content: html,
+          design: JSON.stringify(design),
+        })
+        .then(() => {
+          alert('Template saved successfully!');
+          setIsCreateOpen(false);
+          setTemplateName('');
+          router.visit('/templates', { method: 'get' });
+        })
+        .catch((error) => {
+          console.error('Error saving template:', error);
+          alert('Failed to save template: ' + (error.response?.data?.message || 'Unknown error'));
+        });
     });
   };
 
-  const handleUpdate = () => {
+  const handleUpdateTemplate = () => {
     if (editingTemplate) {
-      router.put(`/templates/${editingTemplate.id}`, editingTemplate, {
-        onSuccess: () => setEditingTemplate(null),
+      emailEditorRef.current?.exportHtml((data) => {
+        const { design, html } = data;
+
+        // Update the template in the backend
+        axios
+          .put(`/templates/${editingTemplate.id}`, {
+            name: editingTemplate.name,
+            content: html,
+            design: JSON.stringify(design),
+          })
+          .then(() => {
+            alert('Template updated successfully!');
+            setEditingTemplate(null);
+            router.reload(); // Reload the page to fetch the updated templates
+          })
+          .catch((error) => {
+            console.error('Error updating template:', error);
+            alert('Failed to update template.');
+          });
       });
     }
   };
@@ -73,30 +108,30 @@ export default function TemplateIndex({ templates }: Props) {
                 Create Template
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogContent
+              className="w-screen h-screen p-0 overflow-hidden flex flex-col"
+              style={{ maxWidth: '100vw', maxHeight: '100vh' }}
+            >
               <DialogHeader>
                 <DialogTitle>Create New Template</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Template Name *</label>
+                <div className="p-4">
                   <Input
                     placeholder="Enter template name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    className="mb-4"
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Content *</label>
-                  <textarea
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 min-h-[100px]"
-                    placeholder="Enter template content"
-                    value={formData.content}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  />
-                </div>
-                <Button onClick={handleCreate} className="w-full">
-                  Create Template
+              </DialogHeader>
+              <div style={{ flex: 1, height: 'calc(100vh - 8rem)' }}>
+                <EmailEditor
+                  ref={emailEditorRef}
+                  onLoad={() => console.log('EmailEditor is loaded and ready')}
+                />
+              </div>
+              <div className="p-4 bg-white border-t sticky bottom-0">
+                <Button onClick={handleSaveTemplate} className="w-full">
+                  Save Template
                 </Button>
               </div>
             </DialogContent>
@@ -119,39 +154,28 @@ export default function TemplateIndex({ templates }: Props) {
                       <p className="text-sm text-gray-600">{template.preview}</p>
                     </div>
                   </DialogTrigger>
-                  <DialogContent className="max-h-[90vh] overflow-y-auto">
+                  <DialogContent
+                    className="w-screen h-screen p-0 overflow-hidden"
+                    style={{ maxWidth: '100vw', maxHeight: '100vh' }}
+                  >
                     <DialogHeader>
                       <DialogTitle>Edit Template</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
-                      <Input
-                        value={editingTemplate?.name || ''}
-                        onChange={(e) =>
-                          setEditingTemplate({ ...editingTemplate!, name: e.target.value })
-                        }
-                        placeholder="Template Name"
+                    <div style={{ height: 'calc(100vh - 4rem)' }}>
+                      <EmailEditor
+                        ref={(ref) => {
+                          emailEditorRef.current = ref;
+                        }}
+                        onLoad={() => {
+                          if (editingTemplate?.content) {
+                            emailEditorRef.current?.loadDesign(JSON.parse(editingTemplate.content));
+                          }
+                        }}
                       />
-                      <textarea
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 min-h-[100px]"
-                        value={editingTemplate?.content || ''}
-                        onChange={(e) =>
-                          setEditingTemplate({ ...editingTemplate!, content: e.target.value })
-                        }
-                        placeholder="Content"
-                      />
-                      <div className="flex gap-2">
-                        <Button onClick={handleUpdate} className="flex-1">
-                          Save
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => setEditingTemplate(null)}
-                          className="flex-1"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
                     </div>
+                    <Button onClick={handleUpdateTemplate} className="mt-4 w-full">
+                      Update Template
+                    </Button>
                   </DialogContent>
                 </Dialog>
 
@@ -167,7 +191,7 @@ export default function TemplateIndex({ templates }: Props) {
                   <Button
                     variant="outline"
                     size="icon"
-                    onClick={() => setPreviewingTemplate(template)} // 👈 Preview button
+                    onClick={() => setPreviewingTemplate(template)}
                   >
                     <Eye className="w-4 h-4" />
                   </Button>
@@ -185,13 +209,19 @@ export default function TemplateIndex({ templates }: Props) {
         </div>
 
         {/* Preview Modal */}
-        <Dialog open={!!previewingTemplate} onOpenChange={(isOpen) => !isOpen && setPreviewingTemplate(null)}>
-          <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <Dialog
+          open={!!previewingTemplate}
+          onOpenChange={(isOpen) => !isOpen && setPreviewingTemplate(null)}
+        >
+          <DialogContent
+            className="w-screen h-screen p-0 overflow-hidden"
+            style={{ maxWidth: '100vw', maxHeight: '100vh' }}
+          >
             <DialogHeader>
               <DialogTitle>Preview Template</DialogTitle>
             </DialogHeader>
             {previewingTemplate && (
-              <div className="space-y-4">
+              <div className="space-y-4 p-4">
                 <h2 className="text-xl font-bold">{previewingTemplate.name}</h2>
                 <div className="prose max-w-none">
                   <div
@@ -203,7 +233,6 @@ export default function TemplateIndex({ templates }: Props) {
             )}
           </DialogContent>
         </Dialog>
-
       </div>
     </AppLayout>
   );
