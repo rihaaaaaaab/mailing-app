@@ -48,7 +48,7 @@ class CampaignController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'template_id' => 'required|exists:templates,id',
-            'list_id' => 'required|exists:lists,id',
+            'list_id' => 'required|exists:contact_lists,id',
             'subject' => 'required|string|max:255',
             'body' => 'required|string',
             'start_date' => 'required|date',
@@ -58,7 +58,11 @@ class CampaignController extends Controller
             'time_end' => 'required|date_format:H:i',
         ]);
 
-        $campaign->update($data);
+        // Update the campaign attributes
+        $campaign->fill($data);
+
+        // Save the updated campaign
+        $campaign->save();
 
         return redirect()->back()->with('success', 'Campaign updated successfully!');
     }

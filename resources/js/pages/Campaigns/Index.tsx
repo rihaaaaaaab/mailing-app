@@ -101,9 +101,27 @@ export default function CampaignIndex({ campaigns, templates, lists }: Props) {
 
   const handleUpdate = () => {
     if (editingCampaign) {
-      router.put(`/campaigns/${editingCampaign.id}`, editingCampaign, {
-        onSuccess: () => setEditingCampaign(null),
+      // Ensure time_end has a valid default value
+      const timeEnd = editingCampaign.time_end || '00:00';
+
+      // Validate time_end format
+      if (!/^\d{2}:\d{2}$/.test(timeEnd)) {
+        alert('The time end field must match the format HH:mm (e.g., 14:30).');
+        return;
+      }
+
+      alert(`Updating campaign: ${editingCampaign.name}`); // Alert to confirm button click
+      router.put(`/campaigns/${editingCampaign.id}`, { ...editingCampaign, time_end: timeEnd }, {
+        onSuccess: () => {
+          alert('Campaign updated successfully!'); // Alert on successful update
+          setEditingCampaign(null);
+        },
+        onError: (errors) => {
+          alert('Failed to update campaign: ' + Object.values(errors).join(', ')); // Alert on error
+        },
       });
+    } else {
+      alert('No campaign selected for update'); // Alert if no campaign is selected
     }
   };
 
@@ -411,7 +429,13 @@ export default function CampaignIndex({ campaigns, templates, lists }: Props) {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setEditingCampaign(campaign)}
+                  onClick={() =>
+                    setEditingCampaign({
+                      ...campaign,
+                      time_end: campaign.time_end || '00:00', // Default to '00:00' if time_end is null
+                      time_start: campaign.time_start || '00:00', // Default to '00:00' if time_start is null
+                    })
+                  }
                 >
                   <Pencil className="w-4 h-4" />
                 </Button>
