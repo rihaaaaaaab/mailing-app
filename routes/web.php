@@ -35,10 +35,10 @@ Route::middleware([
     Route::get('/templates', [TemplateController::class, 'index'])->name('templates.index');
     Route::post('/templates', [TemplateController::class, 'store'])->name('templates.store');
     Route::put('/templates/{template}', [TemplateController::class, 'update'])->name('templates.update');
+    
     Route::delete('/templates/{template}', [TemplateController::class, 'destroy'])->name('templates.destroy');
     Route::resource('campaigns', CampaignController::class)->except(['show']);
 });
-
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

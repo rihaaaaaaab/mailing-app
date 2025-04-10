@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Pencil, Trash2, Eye } from 'lucide-react';
 import AppLayout from '@/Layouts/app-layout';
 import EmailEditor from 'react-email-editor';
-import axios from 'axios';
 
 interface Template {
   id: number;
@@ -29,67 +28,62 @@ export default function TemplateIndex({ templates }: Props) {
   const [templateName, setTemplateName] = useState('');
 
   const handleSaveTemplate = () => {
-    if (!emailEditorRef.current) {
-      console.error('EmailEditor ref is not initialized.');
-      return;
-    }
-
-    // Ensure the editor is loaded
     emailEditorRef.current.editor.exportHtml((data) => {
-      const { design, html } = data;
+        const { design, html } = data;
 
-      if (!templateName.trim()) {
-        alert('Please enter a template name');
-        return;
-      }
-
-      axios
-        .post('/templates', {
-          name: templateName,
-          content: html,
-          design: JSON.stringify(design),
-        })
-        .then(() => {
-          alert('Template saved successfully!');
-          setIsCreateOpen(false);
-          setTemplateName('');
-          router.visit('/templates', { method: 'get' });
-        })
-        .catch((error) => {
-          console.error('Error saving template:', error);
-          alert('Failed to save template: ' + (error.response?.data?.message || 'Unknown error'));
+        router.post('/templates', {
+            name: templateName,
+            content: html,
+            design: JSON.stringify(design), // Save design as JSON
+        }, {
+            onSuccess: () => {
+                console.log('Template created successfully!');
+                router.reload(); // Refresh the page to see changes
+            },
+            onError: (errors) => {
+                console.error('Failed to create template:', errors);
+            },
         });
     });
   };
 
   const handleUpdateTemplate = () => {
-    if (editingTemplate) {
-      emailEditorRef.current?.exportHtml((data) => {
-        const { design, html } = data;
+      if (!editingTemplate) {
+          console.error('No template selected for editing.');
+          return;
+      }
 
-        // Update the template in the backend
-        axios
-          .put(`/templates/${editingTemplate.id}`, {
-            name: editingTemplate.name,
-            content: html,
-            design: JSON.stringify(design),
-          })
-          .then(() => {
-            alert('Template updated successfully!');
-            setEditingTemplate(null);
-            router.reload(); // Reload the page to fetch the updated templates
-          })
-          .catch((error) => {
-            console.error('Error updating template:', error);
-            alert('Failed to update template.');
+      emailEditorRef.current.editor.exportHtml((data) => {
+          const { design, html } = data;
+
+          router.put(`/templates/${editingTemplate.id}`, {
+              name: templateName || editingTemplate.name,
+              content: html,
+              design: JSON.stringify(design), // Save updated design
+          }, {
+              onSuccess: () => {
+                  alert('Template updated successfully!'); // Show success alert
+                  setEditingTemplate(null); // Close the update dialog
+                  router.reload(); // Refresh the page to see changes
+              },
+              onError: (errors) => {
+                  console.error('Failed to update template:', errors);
+              },
           });
       });
-    }
   };
 
   const handleDelete = (id: number) => {
     if (confirm('Are you sure you want to delete this template?')) {
-      router.delete(`/templates/${id}`);
+      router.delete(`/templates/${id}`, {
+        onSuccess: () => {
+          console.log('Template deleted successfully!');
+          router.reload(); // Refresh the page to see changes
+        },
+        onError: (errors) => {
+          console.error('Failed to delete template:', errors);
+        },
+      });
     }
   };
 
@@ -160,6 +154,14 @@ export default function TemplateIndex({ templates }: Props) {
                   >
                     <DialogHeader>
                       <DialogTitle>Edit Template</DialogTitle>
+                      <div className="p-4">
+                        <Input
+                          placeholder="Enter template name"
+                          value={templateName}
+                          onChange={(e) => setTemplateName(e.target.value)}
+                          className="mb-4"
+                        />
+                      </div>
                     </DialogHeader>
                     <div style={{ height: 'calc(100vh - 4rem)' }}>
                       <EmailEditor
@@ -167,15 +169,25 @@ export default function TemplateIndex({ templates }: Props) {
                           emailEditorRef.current = ref;
                         }}
                         onLoad={() => {
-                          if (editingTemplate?.content) {
-                            emailEditorRef.current?.loadDesign(JSON.parse(editingTemplate.content));
+                          if (editingTemplate?.design) {
+                            try {
+                              const design = JSON.parse(editingTemplate.design); // Use design field
+                              emailEditorRef.current.editor.loadDesign(design);
+                            } catch (error) {
+                              console.error('Failed to load template design:', error);
+                            }
+                          }
+                          if (editingTemplate?.name) {
+                            setTemplateName(editingTemplate.name); // Pre-fill the name input
                           }
                         }}
                       />
                     </div>
-                    <Button onClick={handleUpdateTemplate} className="mt-4 w-full">
-                      Update Template
-                    </Button>
+                    <div className="p-4 bg-white border-t sticky bottom-0">
+                      <Button onClick={handleUpdateTemplate} className="w-full">
+                        Update Template
+                      </Button>
+                    </div>
                   </DialogContent>
                 </Dialog>
 
@@ -207,33 +219,36 @@ export default function TemplateIndex({ templates }: Props) {
             </Card>
           ))}
         </div>
-
-        {/* Preview Modal */}
-        <Dialog
-          open={!!previewingTemplate}
-          onOpenChange={(isOpen) => !isOpen && setPreviewingTemplate(null)}
-        >
-          <DialogContent
-            className="w-screen h-screen p-0 overflow-hidden"
-            style={{ maxWidth: '100vw', maxHeight: '100vh' }}
-          >
-            <DialogHeader>
-              <DialogTitle>Preview Template</DialogTitle>
-            </DialogHeader>
-            {previewingTemplate && (
-              <div className="space-y-4 p-4">
-                <h2 className="text-xl font-bold">{previewingTemplate.name}</h2>
-                <div className="prose max-w-none">
-                  <div
-                    className="text-sm text-gray-600 border rounded-md p-2 bg-gray-50"
-                    dangerouslySetInnerHTML={{ __html: previewingTemplate.content }}
-                  />
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
+
+      {/* Preview Modal */}
+      <Dialog
+        open={!!previewingTemplate}
+        onOpenChange={() => setPreviewingTemplate(null)}
+      >
+        <DialogContent
+          className="w-screen h-screen p-4 overflow-auto"
+          style={{ maxWidth: '100vw', maxHeight: '100vh' }}
+        >
+          <DialogHeader>
+            <DialogTitle>Preview Template</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 bg-white border rounded">
+            {previewingTemplate?.content ? (
+              <div
+                dangerouslySetInnerHTML={{ __html: previewingTemplate.content }}
+              />
+            ) : (
+              <p>No preview available for this template.</p>
+            )}
+          </div>
+          <div className="mt-4">
+            <Button onClick={() => setPreviewingTemplate(null)} className="w-full">
+              Close Preview
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }

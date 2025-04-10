@@ -11,6 +11,8 @@ class Template extends Model
     protected $fillable = [
         'name',
         'content',
+        'design',
+        
     ];
 
     protected $appends = ['preview'];

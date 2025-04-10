@@ -23,6 +23,7 @@ class TemplateController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'content' => 'nullable|string',
+            'design' => 'nullable|json', // Validate design as JSON
         ]);
 
         $data['content'] = Purifier::clean($data['content']); // Sanitize HTML
@@ -37,6 +38,7 @@ class TemplateController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'content' => 'nullable|string',
+            'design' => 'nullable|json', // Validate design as JSON
         ]);
 
         $data['content'] = Purifier::clean($data['content']); // Sanitize HTML
